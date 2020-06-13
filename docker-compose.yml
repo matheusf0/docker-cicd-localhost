@@ -1,0 +1,75 @@
+version: '3.3'
+services:
+
+
+  gitlab-ce:
+    ports:
+    - '8081:80'
+    - '2222:22'
+    container_name: devlab_gitlab
+    restart: always
+    volumes:
+      - ~/.docker-storage/gitlab/config:/etc/gitlab
+      - ~/.docker-storage/gitlab/logs:/var/log/gitlab
+      - ~/.docker-storage/gitlab/data:/var/opt/gitlab
+    image: gitlab/gitlab-ce:latest
+    networks:
+      - vlan_devlab
+
+
+  portainer:
+    image: portainer/portainer
+    ports:
+      - '8082:9000'
+    container_name: devlab_portainer
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker-storage/portainer/data:/data
+    networks:
+      - vlan_devlab  
+
+
+  postgres:
+    container_name: devlab_postgres
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /data/postgres
+    volumes:
+      - ~/.docker-storage/postgres/data:/data/postgres
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    networks:
+      - vlan_devlab
+
+
+  pgadmin:
+    container_name: pgadmin4
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    volumes:
+      - ~/.docker-storage/pgadmin/config:/root/.pgadmin
+    ports:
+      - 8083:80
+    restart: unless-stopped
+    networks:
+      - vlan_devlab
+
+
+  gitlab-runner:
+    container_name: gitlab-runner
+    restart: always
+    volumes:
+      - '~/.docker-storage/gitlab-runner/config:/etc/gitlab-runner'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    image: 'gitlab/gitlab-runner:latest'
+    networks:
+      - vlan_devlab
+
+networks:
+  vlan_devlab:
